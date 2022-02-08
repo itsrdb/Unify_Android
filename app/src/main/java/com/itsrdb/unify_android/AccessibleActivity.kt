@@ -3,9 +3,11 @@ package com.itsrdb.unify_android
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.Notification
+import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.database.FirebaseDatabase
 
 class AccessibleActivity : AccessibilityService() {
     override fun onInterrupt() {}
@@ -21,10 +23,10 @@ class AccessibleActivity : AccessibilityService() {
             Log.e("pkg", pkgName)
             Log.e("extxt", exTxt)
             var i = 0
-            for (msg in exTxtLines) {
-                Log.d("Line $i", (msg as String))
-                i += 1
-            }
+//            for (msg in exTxtLines) {
+//                Log.d("Line $i", (msg as String))
+//                i += 1
+//            }
 
             val ex2 = notif.extras.getCharSequence(Notification.FLAG_ONGOING_EVENT.toString()).toString()
             val ex3 = event.eventTime.toString()
@@ -33,8 +35,28 @@ class AccessibleActivity : AccessibilityService() {
             Log.e("ex", ex3)
             Log.e("ex", ex4)
 
-            Firebase
+            val pm : PackageManager = applicationContext.packageManager
+            try {
+                val icon: Drawable = pm.getApplicationIcon(pkgName)
+                val appName = pm.getApplicationInfo( this.getPackageName(), 0);
+                //val icon: Drawable = getContext().getPackageManager().getApplicationIcon("com.example.testnotification")
+                //imageView.setImageDrawable(icon)
+            } catch (e: PackageManager.NameNotFoundException) {
+                e.printStackTrace()
+            }
+
+            val n1 = MyNotification(title, pkgName, exTxt)
+            //val dbhelper = DAONotif()
+
+            sendData(n1)
         }
+    }
+
+    fun sendData(n1 : MyNotification){
+        val db = FirebaseDatabase.getInstance()
+        val dataNodeRef = db!!.getReference("notifs")
+        var id = dataNodeRef.push().key
+        dataNodeRef.child("lastMsg").setValue(n1)
     }
 
     override fun onServiceConnected() {
